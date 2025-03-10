@@ -168,6 +168,6 @@ def delete_notice(notice_id):
 
 # --- Run the App ---
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0')
+    socketio.run(app, debug=False, host='0.0.0.0', ping_timeout=120, ping_interval=30)
 
 

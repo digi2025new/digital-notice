@@ -8,15 +8,16 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header class="admin-header">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
             <h1>Admin Panel</h1>
             <nav>
-                <a href="{{ url_for('index') }}">View Notice Board</a> |
-                <a href="{{ url_for('logout') }}">Logout</a>
+                <a href="{{ url_for('index') }}" class="nav-link">View Notice Board</a>
+                <a href="{{ url_for('logout') }}" class="nav-link">Logout</a>
             </nav>
         </header>
-        <main>
+
+        <main class="admin-main">
             <section id="new-notice">
                 <h2>Add New Notice</h2>
                 <form id="new-notice-form" method="post" action="{{ url_for('add_notice') }}" enctype="multipart/form-data">
@@ -39,7 +40,7 @@
                         <div class="notice">
                             <h3>{{ notice.title }}</h3>
                             {% if notice.file_path %}
-                                <p>File: {{ notice.file_path }}</p>
+                                <p><strong>File:</strong> <a href="{{ notice.file_path }}" target="_blank">{{ notice.file_path }}</a></p>
                             {% endif %}
                             <form method="post" action="{{ url_for('delete_notice', notice_id=notice.id) }}">
                                 <button type="submit" class="btn btn-danger">Delete</button>
@@ -49,6 +50,7 @@
                 </div>
             </section>
         </main>
+
         <footer>
             <p>&copy; 2025 Digital Notice Board</p>
         </footer>

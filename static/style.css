@@ -1,4 +1,13 @@
-/* Center the entire Admin Page */
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f8f9fa;
+    text-align: center;
+}
+
+/* Container */
 .container {
     display: flex;
     flex-direction: column;
@@ -9,29 +18,81 @@
     text-align: center;
 }
 
-/* Admin Header */
-.admin-header {
-    text-align: center;
-    margin-bottom: 20px;
+/* Header */
+header {
+    background: #007bff;
+    color: white;
+    padding: 15px;
+    width: 100%;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Form Styling */
-form {
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.logo {
+    max-height: 60px;
+    margin-bottom: 10px;
+}
+
+/* Notices Section */
+#notices {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    background: #f4f4f4;
-    padding: 20px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 500px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+    flex-direction: column;
+}
+
+/* Notice Grid */
+.notices-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    width: 90%;
+    max-width: 1200px;
+}
+
+/* Individual Notice Styling */
+.notice {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+.notice:hover {
+    transform: scale(1.02);
+}
+
+/* Responsive Notice Display */
+.responsive-notice {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+/* Fade-in effect for new notices */
+.fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Buttons */
 .btn {
     padding: 10px 15px;
-    margin-top: 10px;
     border: none;
     cursor: pointer;
     font-size: 16px;
@@ -53,20 +114,56 @@ form {
     opacity: 0.8;
 }
 
-/* Notices List */
-.notices-list {
+/* Forms */
+form {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    margin-top: 20px;
+    background: #f4f4f4;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.notice {
-    background: white;
+.form-group {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+input[type="text"], input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Footer */
+footer {
+    margin-top: 20px;
     padding: 15px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #007bff;
+    color: white;
+    width: 100%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .notices-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .notice {
+        width: 90%;
+    }
+
+    .responsive-notice {
+        max-height: 50vh;
+    }
 }

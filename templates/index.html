@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Notice Board</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
+            <h1>Digital Notice Board</h1>
+        </header>
+        <main>
+            <div id="notices" class="notices-grid">
+                <!-- Notices will be displayed here by JavaScript -->
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 2025 Digital Notice Board</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        const socket = io('http://{{ request.host }}'); // Connect to WebSocket server
+
+        socket.on('connect', function() {
+            console.log('Connected to WebSocket server');
+        });
+
+        socket.on('update_notices', function(msg) {
+            console.log('Received update:', msg);
+            loadNotices(); // Reload notices when an update is received
+        });
+
+        let currentNoticeIndex = 0;
+        let noticesData = []; // Store the notice data
+
+        function loadNotices() {
+            fetch('/notices') //This should call /notices routes to return json output
+                .then(response => response.json())
+                .then(notices => {
+                    noticesData = notices; // Store the notices data
+                    currentNoticeIndex = 0; // Reset index
+                    if (noticesData.length > 0) {
+                        displayNotice(currentNoticeIndex); // Display the first notice
+                    } else {
+                        document.getElementById('notices').innerHTML = '<p>No notices to display.</p>';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function displayNotice(index) {
+            const noticesDiv = document.getElementById('notices');
+            if (!noticesDiv) return; // Exit if element doesn't exist
+
+            if (noticesData.length === 0) {
+                noticesDiv.innerHTML = '<p>No notices to display.</p>';
+                return;
+            }
+
+            const notice = noticesData[index];
+            let noticeHTML = '';
+
+            if (notice.file_type === 'png' || notice.file_type === 'jpg' || notice.file_type === 'jpeg' || notice.file_type === 'gif') {
+                noticeHTML = `<img src="${notice.file_path}" alt="${notice.title}" style="max-width:100%; max-height:500px;">`;
+            } else if (notice.file_type === 'mp4') {
+                noticeHTML = `<video src="${notice.file_path}" controls style="max-width:100%; max-height:500px;"></video>`;
+            } else if (notice.file_type === 'mp3') {
+                noticeHTML = `<audio src="${notice.file_path}" controls></audio>`;
+            } else if (notice.file_type === 'txt') {
+                noticeHTML = `<p>${notice.content}</p>`;
+            } else {
+                noticeHTML = `<p>Unsupported file type.</p>`;
+            }
+            noticesDiv.innerHTML = `<div class="notice">${noticeHTML}<h3>${notice.title}</h3></div>`;
+        }
+
+        function nextNotice() {
+            currentNoticeIndex = (currentNoticeIndex + 1) % noticesData.length;
+            displayNotice(currentNoticeIndex);
+        }
+
+        // Initial load and slideshow
+        loadNotices();
+        setInterval(nextNotice, 5000); // Change notice every 5 seconds
+    </script>
+</body>
+</html>

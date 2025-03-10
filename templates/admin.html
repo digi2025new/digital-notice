@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Digital Notice Board</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
+            <h1>Admin Panel</h1>
+            <nav>
+                <a href="{{ url_for('index') }}">View Notice Board</a> |
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </nav>
+        </header>
+        <main>
+            <section id="new-notice">
+                <h2>Add New Notice</h2>
+                <form id="new-notice-form" method="post" action="{{ url_for('add_notice') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="file">File:</label>
+                        <input type="file" id="file" name="file" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Notice</button>
+                </form>
+            </section>
+
+            <section id="existing-notices">
+                <h2>Existing Notices</h2>
+                <div id="notices-list" class="notices-list">
+                    {% for notice in notices %}
+                        <div class="notice">
+                            <h3>{{ notice.title }}</h3>
+                            {% if notice.file_path %}
+                                <p>File: {{ notice.file_path }}</p>
+                            {% endif %}
+                            <form method="post" action="{{ url_for('delete_notice', notice_id=notice.id) }}">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+        <footer>
+            <p>&copy; 2025 Digital Notice Board</p>
+        </footer>
+    </div>
+</body>
+</html>

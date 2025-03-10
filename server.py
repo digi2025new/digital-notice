@@ -12,7 +12,7 @@ app.secret_key = "YOUR_SECRET_KEY"  # Change this to a strong, random key!
 # --- Configuration ---
 DB_NAME = 'noticeboard.db'
 UPLOAD_FOLDER = 'static/uploads'  # Directory to store uploaded files
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'txt'}  # Allowed file types
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}# Allowed file types
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Create the upload folder if it doesn't exist
 
@@ -37,7 +37,15 @@ def test_connect():
 
 # --- Helper function to emit update ---
 def emit_notices_update():
-    socketio.emit('update_notices', {'data': 'Notices updated'})
+    conn = get_db_connection()
+    notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
+    conn.close()
+
+    notices_list = [dict(notice) for notice in notices]  # Convert to dictionary format
+    print("Emitting notices:", notices_list)  # Debugging
+    socketio.emit('update_notices', {'notices': notices_list})
+
+
 
 # --- Routes ---
 @app.route('/login', methods=['GET', 'POST'])
@@ -128,7 +136,7 @@ def add_notice():
 
         conn = get_db_connection()
         conn.execute('INSERT INTO notices (title, file_path, file_type) VALUES (?, ?, ?)',
-                     (title, file_path, file_type))
+                    (title, file_path, file_type))
         conn.commit()
         conn.close()
 
@@ -160,4 +168,6 @@ def delete_notice(notice_id):
 
 # --- Run the App ---
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0')  # Use socketio.run instead of app.run
+    socketio.run(app, debug=True, host='0.0.0.0')
+
+

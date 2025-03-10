@@ -1,9 +1,8 @@
-# server.py
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 import sqlite3
 import os
 from datetime import datetime
-from werkzeug.utils import secure_filename  # for secure file uploads
+from werkzeug.utils import secure_filename  # For secure file uploads
 from flask_socketio import SocketIO, emit  # For real-time updates
 
 app = Flask(__name__)
@@ -12,51 +11,57 @@ app.secret_key = "YOUR_SECRET_KEY"  # Change this to a strong, random key!
 # --- Configuration ---
 DB_NAME = 'noticeboard.db'
 UPLOAD_FOLDER = 'static/uploads'  # Directory to store uploaded files
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}# Allowed file types
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}  # Allowed file types
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Create the upload folder if it doesn't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure upload folder exists
 
 # --- SocketIO ---
-socketio = SocketIO(app)  # Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")  # Allow all origins for WebSocket connections
 
 def get_db_connection():
-    # Use an absolute path for the database file
+    """Establishes and returns a database connection."""
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
-    conn = sqlite3.connect(db_path)  # Absolute path here too
-    conn.row_factory = sqlite3.Row  # Access columns by name
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row  # Enables column access by name
     return conn
 
 def allowed_file(filename):
+    """Checks if uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- SocketIO Event Handlers ---
 @socketio.on('connect')
 def test_connect():
     print('Client connected')
-    emit('my response', {'data': 'Connected!'})  # Send a message back to the client
+    emit('my_response', {'data': 'Connected successfully!'})
 
-# --- Helper function to emit update ---
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected')
+
+# --- Real-time Update Helper Function ---
 def emit_notices_update():
+    """Fetches and broadcasts the latest notices to all connected clients."""
     conn = get_db_connection()
-    notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    conn.close()
-
-    notices_list = [dict(notice) for notice in notices]  # Convert to dictionary format
-    print("Emitting notices:", notices_list)  # Debugging
-    socketio.emit('update_notices', {'notices': notices_list})
-
-
+    try:
+        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
+        notices_list = [dict(notice) for notice in notices]  # Convert to dictionary format
+        socketio.emit('update_notices', {'notices': notices_list})
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    finally:
+        conn.close()
 
 # --- Routes ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles admin login."""
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']  # IMPORTANT: Hash in a real app
+        password = request.form['password']  # IMPORTANT: Hash passwords in a real app!
 
         conn = get_db_connection()
-        user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?',
-                            (username, password)).fetchone()
+        user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password)).fetchone()
         conn.close()
 
         if user:
@@ -69,10 +74,12 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logs out the admin."""
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
 def login_required(f):
+    """Decorator for protecting routes that require login."""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -83,42 +90,44 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    print("Running Index")  # Debugging check
-
+    """Displays the public notice board."""
     conn = get_db_connection()
-
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
     except sqlite3.OperationalError as e:
         print(f"Database error: {e}")
+        return "Database error. Check logs.", 500
+    finally:
         conn.close()
-        return "Database error. Check the console for details.", 500  # Return an error page
-
-    conn.close()
-    print(f"Notices from db: {notices}")  # Debugging: print notices retrieved
 
     return render_template('index.html', notices=notices)
 
 @app.route('/notices')
 def get_notices():
+    """Returns all notices as JSON."""
     conn = get_db_connection()
-    notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    conn.close()
-    notices_list = [dict(notice) for notice in notices]  # Convert Row objects to dictionaries
-    return jsonify(notices_list) # returns json list
-
+    try:
+        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
+        notices_list = [dict(notice) for notice in notices]
+        return jsonify(notices_list)
+    finally:
+        conn.close()
 
 @app.route('/admin')
-@login_required  # Protect the admin route
+@login_required
 def admin():
+    """Admin panel to manage notices."""
     conn = get_db_connection()
-    notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    conn.close()
+    try:
+        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
+    finally:
+        conn.close()
     return render_template('admin.html', notices=notices)
 
 @app.route('/notices', methods=['POST'])
 @login_required
 def add_notice():
+    """Adds a new notice and updates the live display."""
     if 'file' not in request.files:
         return "No file part"
 
@@ -132,15 +141,16 @@ def add_notice():
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
-        file_type = filename.rsplit('.', 1)[1].lower()  # extract extension as file type
+        file_type = filename.rsplit('.', 1)[1].lower()  # Extract file extension
 
         conn = get_db_connection()
-        conn.execute('INSERT INTO notices (title, file_path, file_type) VALUES (?, ?, ?)',
-                    (title, file_path, file_type))
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute('INSERT INTO notices (title, file_path, file_type) VALUES (?, ?, ?)', (title, file_path, file_type))
+            conn.commit()
+            emit_notices_update()  # **Trigger real-time update**
+        finally:
+            conn.close()
 
-        emit_notices_update()  # Send update to the display side
         return redirect(url_for('admin'))
 
     return "Invalid file type"
@@ -148,26 +158,25 @@ def add_notice():
 @app.route('/notices/<int:notice_id>/delete', methods=['POST'])
 @login_required
 def delete_notice(notice_id):
+    """Deletes a notice and updates the live display."""
     conn = get_db_connection()
-    notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
+    try:
+        notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
 
-    if notice:
-        file_path = notice['file_path']
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)  # Delete the file from the server
+        if notice:
+            file_path = notice['file_path']
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)  # Delete the file from the server
 
-        conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
-        conn.commit()
+            conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
+            conn.commit()
+            emit_notices_update()  # **Trigger real-time update**
+            return redirect(url_for('admin'))
+        else:
+            return "Notice not found"
+    finally:
         conn.close()
-
-        emit_notices_update()  # Send update to the display side
-        return redirect(url_for('admin'))
-    else:
-        conn.close()
-        return "Notice not found"
 
 # --- Run the App ---
 if __name__ == '__main__':
-    socketio.run(app, debug=False, host='0.0.0.0', ping_timeout=120, ping_interval=30)
-
-
+    socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), ping_timeout=120, ping_interval=30)

@@ -25,16 +25,38 @@
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
-        const socket = io('http://{{ request.host }}'); // Connect to WebSocket server
+        const socket = io(); // Connect to WebSocket server
 
         socket.on('connect', function() {
             console.log('Connected to WebSocket server');
         });
 
-        socket.on('update_notices', function(msg) {
-            console.log('Received update:', msg);
-            loadNotices(); // Reload notices when an update is received
-        });
+socket.on('update_notices', function(msg) {
+    console.log('New notices received:', msg);
+    displayNotices(msg.notices);  // Instantly update notices without refreshing
+});
+
+function displayNotices(notices) {
+    const noticesDiv = document.getElementById('notices');
+    noticesDiv.innerHTML = ""; // Clear existing notices
+
+    notices.forEach(notice => {
+        let noticeHTML = '';
+
+        if (notice.file_type === 'png' || notice.file_type === 'jpg' || notice.file_type === 'jpeg' || notice.file_type === 'gif') {
+            noticeHTML = `<img src="${notice.file_path}" alt="${notice.title}" class="responsive-notice">`;
+        } else if (notice.file_type === 'mp4' || notice.file_type === 'avi' || notice.file_type === 'mov') {
+            noticeHTML = `<video src="${notice.file_path}" controls class="responsive-notice"></video>`;
+        } else if (notice.file_type === 'mp3' || notice.file_type === 'wav') {
+            noticeHTML = `<audio src="${notice.file_path}" controls></audio>`;
+        } else {
+            noticeHTML = `<p class="text-notice">${notice.content || 'Text Notice'}</p>`;
+        }
+
+        noticesDiv.innerHTML += `<div class="notice">${noticeHTML}<h3>${notice.title}</h3></div>`;
+    });
+}
+
 
         let currentNoticeIndex = 0;
         let noticesData = []; // Store the notice data

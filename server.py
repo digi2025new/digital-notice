@@ -11,7 +11,7 @@ app.secret_key = "YOUR_SECRET_KEY"  # Change this to a strong, random key!
 # --- Configuration ---
 DB_NAME = 'noticeboard.db'
 UPLOAD_FOLDER = 'static/uploads'  # Directory to store uploaded files
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}  # Allowed file types
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure upload folder exists
 
@@ -113,6 +113,18 @@ def get_notices():
     finally:
         conn.close()
 
+@app.route('/notices/<department>')
+def get_department_notices(department):
+    """Returns notices for a specific department as JSON."""
+    conn = get_db_connection()
+    try:
+        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC', 
+                               (department,)).fetchall()
+        notices_list = [dict(notice) for notice in notices]
+        return jsonify(notices_list)
+    finally:
+        conn.close()
+
 @app.route('/admin')
 @login_required
 def admin():
@@ -128,11 +140,13 @@ def admin():
 @login_required
 def add_notice():
     """Adds a new notice and updates the live display."""
-    if 'file' not in request.files:
-        return "No file part"
+    # Ensure both file and department are provided
+    if 'file' not in request.files or 'department' not in request.form:
+        return "Missing file or department field", 400
 
     file = request.files['file']
     title = request.form['title']
+    department = request.form['department']  # Department field added
 
     if file.filename == '':
         return "No selected file"
@@ -145,9 +159,11 @@ def add_notice():
 
         conn = get_db_connection()
         try:
-            conn.execute('INSERT INTO notices (title, file_path, file_type) VALUES (?, ?, ?)', (title, file_path, file_type))
+            # Ensure your 'notices' table includes a 'department' column.
+            conn.execute('INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)', 
+                         (title, file_path, file_type, department))
             conn.commit()
-            emit_notices_update()  # **Trigger real-time update**
+            emit_notices_update()  # Trigger real-time update
         finally:
             conn.close()
 
@@ -170,7 +186,7 @@ def delete_notice(notice_id):
 
             conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
             conn.commit()
-            emit_notices_update()  # **Trigger real-time update**
+            emit_notices_update()  # Trigger real-time update
             return redirect(url_for('admin'))
         else:
             return "Notice not found"
@@ -179,4 +195,4 @@ def delete_notice(notice_id):
 
 # --- Run the App ---
 if __name__ == '__main__':
-    socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), ping_timeout=120, ping_interval=30)
+    socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Digital Notice Board</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <!-- Socket.IO for real-time updates -->
@@ -15,9 +15,7 @@
       <h1>Digital Notice Board</h1>
     </header>
     <main>
-      <div id="notices">
-        <!-- Notices displayed dynamically via JavaScript -->
-      </div>
+      <div id="notices"></div>
     </main>
     <footer>
       <p>&copy; 2025 Digital Notice Board</p>
@@ -44,34 +42,34 @@
 
     function displayNotice(notice) {
       const noticesDiv = document.getElementById('notices');
-      noticesDiv.innerHTML = ""; // Clear previous notice
+      noticesDiv.innerHTML = ""; // Clear any previous notice
 
       let mediaHTML = "";
-      // Choose how to display based on file type
+
       if (['png', 'jpg', 'jpeg', 'gif'].includes(notice.file_type)) {
         mediaHTML = `<img src="${notice.file_path}" alt="${notice.title}" class="responsive-notice">`;
       } else if (['mp4', 'avi', 'mov'].includes(notice.file_type)) {
-        // Autoplay video without controls
-        // 'muted' is necessary for most browsers to allow autoplay
+        // Autoplay video
         mediaHTML = `
           <video 
-            src="${notice.file_path}" 
-            class="responsive-notice" 
-            autoplay 
-            muted 
+            src="${notice.file_path}"
+            class="responsive-notice"
+            autoplay
+            muted
             playsinline
           ></video>`;
-      } else if (['mp3', 'wav'].includes(notice.file_type)) {
-        // Audio still needs controls or user won't hear it
+      } else if (['mp3','wav'].includes(notice.file_type)) {
         mediaHTML = `<audio src="${notice.file_path}" controls class="responsive-notice"></audio>`;
       } else {
-        // For unknown or text-based notices
         mediaHTML = `<p>${notice.content || 'Text Notice'}</p>`;
       }
 
       const noticeElement = document.createElement("div");
       noticeElement.classList.add("notice");
-      noticeElement.innerHTML = `${mediaHTML}<h3>${notice.title}</h3>`;
+      noticeElement.innerHTML = `
+        ${mediaHTML}
+        <h3>${notice.title}</h3>
+      `;
       noticesDiv.appendChild(noticeElement);
 
       // If it's a video, wait until it ends before advancing
@@ -83,7 +81,7 @@
           };
         }
       } else {
-        // For images or other notices, display for 5 seconds
+        // For images or other file types, show for 5 seconds
         setTimeout(nextNotice, 5000);
       }
     }
@@ -94,21 +92,21 @@
       displayNotice(noticesData[currentNoticeIndex]);
     }
 
+    // Fetch notices from server on initial load
     function loadNotices() {
       fetch('/notices')
-        .then(response => response.json())
-        .then(notices => {
-          noticesData = notices;
+        .then(res => res.json())
+        .then(data => {
+          noticesData = data;
           if (noticesData.length > 0) {
             displayNotice(noticesData[currentNoticeIndex]);
           } else {
             document.getElementById('notices').innerHTML = '<p>No notices to display.</p>';
           }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(err => console.error('Error:', err));
     }
 
-    // Initial load
     loadNotices();
   </script>
 </body>

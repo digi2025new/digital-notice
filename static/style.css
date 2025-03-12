@@ -74,7 +74,7 @@ header h1 {
 
 /* Individual Notice Styling */
 .notice {
-    display: inline-block;        /* allows side-by-side if space permits */
+    display: inline-block;
     background: white;
     margin: 10px;
     padding: 15px;
@@ -82,15 +82,15 @@ header h1 {
     text-align: center;
     vertical-align: top;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-    max-width: 300px;            /* adjust as needed */
+    max-width: 300px;
 }
 
 /* Responsive Notice Display */
 .responsive-notice {
     width: 100%;
     height: auto;
-    max-height: 300px;           /* prevents overly tall images/videos */
-    object-fit: contain;         /* keeps full image visible without cropping */
+    max-height: 300px; 
+    object-fit: contain;
     border-radius: 8px;
 }
 
@@ -187,11 +187,11 @@ footer {
 
     .notice {
         width: 90%;
-        max-width: 100%; /* ensures notice doesn't overflow on small screens */
+        max-width: 100%; 
     }
 
     .responsive-notice {
-        max-height: 250px; /* adjust for smaller screens if you like */
+        max-height: 250px; 
     }
 }
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Admin Panel - Digital Notice Board</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -18,6 +18,7 @@
     </header>
 
     <main class="admin-main">
+      <!-- Add New Notice -->
       <section id="new-notice">
         <h2>Add New Notice</h2>
         <form id="new-notice-form" method="post" action="{{ url_for('add_notice') }}" enctype="multipart/form-data">
@@ -26,13 +27,13 @@
             <input type="text" id="title" name="title" required>
           </div>
           <div class="form-group">
-            <label for="file">File:</label>
+            <label for="file">Choose File:</label>
             <input type="file" id="file" name="file" required>
           </div>
           <div class="form-group">
-            <label for="department">Department:</label>
+            <label for="department">Select Department</label>
             <select id="department" name="department" required>
-              <option value="">Select Department</option>
+              <option value="">--Select Department--</option>
               <option value="extc">EXTC</option>
               <option value="it">IT</option>
               <option value="cs">CS</option>
@@ -43,14 +44,17 @@
         </form>
       </section>
 
+      <!-- Existing Notices -->
       <section id="existing-notices">
         <h2>Existing Notices</h2>
-        <div id="notices-list" class="notices-list">
+        <div class="notices-grid">
           {% for notice in notices %}
             <div class="notice">
               <h3>{{ notice.title }}</h3>
               {% if notice.file_path %}
-                <p><strong>File:</strong> <a href="{{ notice.file_path }}" target="_blank">{{ notice.file_path }}</a></p>
+                <p><strong>File:</strong>
+                  <a href="{{ notice.file_path }}" target="_blank">{{ notice.file_path }}</a>
+                </p>
               {% endif %}
               <form method="post" action="{{ url_for('delete_notice', notice_id=notice.id) }}">
                 <button type="submit" class="btn btn-danger">Delete</button>

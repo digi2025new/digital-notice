@@ -92,8 +92,6 @@ def login_required(f):
 @app.route('/')
 def index():
     """Displays the main page (department selection or general info)."""
-    # If you have a department selection, you could render a page here
-    # or just redirect to an existing route. For now, we show index.html.
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -121,6 +119,8 @@ def get_department_notices(department):
     """Returns notices for a specific department as JSON."""
     conn = get_db_connection()
     try:
+        # If your DB stores 'IT' but the route is '/notices/it', 
+        # you may need to do lower(...) on both sides, similarly to the HTML route below.
         notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC',
                                (department,)).fetchall()
         notices_list = [dict(notice) for notice in notices]
@@ -149,7 +149,8 @@ def add_notice():
 
     file = request.files['file']
     title = request.form['title']
-    department = request.form['department']  # Department field
+    # Convert department to lowercase to maintain consistency
+    department = request.form['department'].lower()
 
     if file.filename == '':
         return "No selected file"
@@ -201,14 +202,17 @@ def delete_notice(notice_id):
 # --- NEW ROUTE FOR DEPARTMENT HTML PAGES ---
 @app.route('/department/<department>')
 def show_department_notices(department):
-    """Renders a webpage showing notices for a specific department."""
+    """Renders a webpage showing notices for a specific department (case-insensitive)."""
+    dept_lower = department.lower()  # Convert route param to lowercase
     conn = get_db_connection()
     try:
-        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC',
-                               (department,)).fetchall()
+        # Compare using lower(department) in DB
+        notices = conn.execute(
+            'SELECT * FROM notices WHERE lower(department) = ? ORDER BY timestamp DESC',
+            (dept_lower,)
+        ).fetchall()
     finally:
         conn.close()
-    # Renders a template that displays images/videos instead of returning JSON
     return render_template('department.html', notices=notices, department=department)
 
 # --- Run the App ---

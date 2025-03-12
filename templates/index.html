@@ -1,103 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Notice Board</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Notice Board</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Include Socket.IO from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
-            <h1>Digital Notice Board</h1>
-        </header>
-        <main>
-            <div id="notices" class="notices-grid">
-                <!-- Notices will be displayed here dynamically -->
-            </div>
-        </main>
-        <footer>
-            <p>&copy; 2025 Digital Notice Board</p>
-        </footer>
-    </div>
+  <div class="container">
+    <header>
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
+      <h1>Digital Notice Board</h1>
+    </header>
+    <main>
+      <div id="notices" class="notices-grid">
+        <!-- Notices will be displayed here dynamically -->
+      </div>
+    </main>
+    <footer>
+      <p>&copy; 2025 Digital Notice Board</p>
+    </footer>
+  </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script>
-        const socket = io();  // Connect to WebSocket server
-        let currentNoticeIndex = 0;
-        let noticesData = []; // Store the notices data
+  <script>
+    // Connect to the Socket.IO server
+    const socket = io();
+    let currentNoticeIndex = 0;
+    let noticesData = [];
 
-        socket.on('connect', function() {
-            console.log('Connected to WebSocket server');
-        });
+    socket.on('connect', function() {
+      console.log('Connected to WebSocket server');
+    });
 
-        // Listen for real-time updates and refresh notices
-        socket.on('update_notices', function(msg) {
-            console.log('New notices received:', msg);
-            noticesData = msg.notices;
-            if (noticesData.length > 0) {
-                currentNoticeIndex = 0;  // Reset to first notice
-                displayNotices(noticesData);
-            }
-        });
+    // Listen for real-time updates to notices
+    socket.on('update_notices', function(msg) {
+      console.log('New notices received:', msg);
+      noticesData = msg.notices;
+      if (noticesData.length > 0) {
+        currentNoticeIndex = 0;  // Reset to the first notice
+        displayNotice(noticesData[currentNoticeIndex]);
+      }
+    });
 
-        function displayNotices(notices) {
-            const noticesDiv = document.getElementById('notices');
-            noticesDiv.innerHTML = ""; // Clear previous notices
+    // Function to display a single notice
+    function displayNotice(notice) {
+      const noticesDiv = document.getElementById('notices');
+      noticesDiv.innerHTML = ""; // Clear previous notice
 
-            notices.forEach((notice, index) => {
-                let noticeHTML = '';
+      let noticeHTML = "";
 
-                if (['png', 'jpg', 'jpeg', 'gif'].includes(notice.file_type)) {
-                    noticeHTML = `<img src="${notice.file_path}" alt="${notice.title}" class="responsive-notice">`;
-                } else if (['mp4', 'avi', 'mov'].includes(notice.file_type)) {
-                    noticeHTML = `<video src="${notice.file_path}" controls class="responsive-notice"></video>`;
-                } else if (['mp3', 'wav'].includes(notice.file_type)) {
-                    noticeHTML = `<audio src="${notice.file_path}" controls></audio>`;
-                } else {
-                    noticeHTML = `<p class="text-notice">${notice.content || 'Text Notice'}</p>`;
-                }
+      // Determine how to display based on the file type
+      if (['png', 'jpg', 'jpeg', 'gif'].includes(notice.file_type)) {
+        noticeHTML = `<img src="${notice.file_path}" alt="${notice.title}" class="responsive-notice">`;
+      } else if (['mp4', 'avi', 'mov'].includes(notice.file_type)) {
+        // For videos, autoplay and attach onended event listener
+        noticeHTML = `<video src="${notice.file_path}" controls autoplay class="responsive-notice"></video>`;
+      } else if (['mp3', 'wav'].includes(notice.file_type)) {
+        noticeHTML = `<audio src="${notice.file_path}" controls class="responsive-notice"></audio>`;
+      } else {
+        // For text or unknown file types
+        noticeHTML = `<p class="text-notice">${notice.content || 'Text Notice'}</p>`;
+      }
 
-                const noticeElement = document.createElement("div");
-                noticeElement.classList.add("notice");
-                noticeElement.innerHTML = `${noticeHTML}<h3>${notice.title}</h3>`;
+      // Create a container for the notice and insert the HTML
+      const noticeElement = document.createElement("div");
+      noticeElement.classList.add("notice");
+      noticeElement.innerHTML = `${noticeHTML}<h3>${notice.title}</h3>`;
+      noticesDiv.appendChild(noticeElement);
 
-                if (index === 0) {
-                    noticeElement.classList.add("fade-in");  // Add fade-in animation
-                }
-
-                noticesDiv.appendChild(noticeElement);
-            });
+      // For videos, wait until the video ends; for others, wait 5 seconds
+      if (['mp4', 'avi', 'mov'].includes(notice.file_type)) {
+        const videoElem = noticeElement.querySelector('video');
+        if (videoElem) {
+          videoElem.onended = function() {
+            nextNotice();
+          };
         }
+      } else {
+        setTimeout(nextNotice, 5000);
+      }
+    }
 
-        function nextNotice() {
-            if (noticesData.length === 0) return;
+    // Function to advance to the next notice
+    function nextNotice() {
+      if (noticesData.length === 0) return;
+      currentNoticeIndex = (currentNoticeIndex + 1) % noticesData.length;
+      displayNotice(noticesData[currentNoticeIndex]);
+    }
 
-            const noticesDiv = document.getElementById('notices');
-            noticesDiv.innerHTML = "";  // Clear previous notice
-            currentNoticeIndex = (currentNoticeIndex + 1) % noticesData.length;
-            displayNotices([noticesData[currentNoticeIndex]]);
-        }
+    // Function to load notices from the server on initial page load
+    function loadNotices() {
+      fetch('/notices')
+        .then(response => response.json())
+        .then(notices => {
+          noticesData = notices;
+          if (noticesData.length > 0) {
+            displayNotice(noticesData[currentNoticeIndex]);
+          } else {
+            document.getElementById('notices').innerHTML = '<p>No notices to display.</p>';
+          }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
-        function loadNotices() {
-            fetch('/notices')
-                .then(response => response.json())
-                .then(notices => {
-                    noticesData = notices;
-                    if (noticesData.length > 0) {
-                        displayNotices([noticesData[currentNoticeIndex]]);
-                    } else {
-                        document.getElementById('notices').innerHTML = '<p>No notices to display.</p>';
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        // Load notices initially and set slideshow
-        loadNotices();
-        setInterval(nextNotice, 5000); // Change notice every 5 seconds
-    </script>
+    // Load notices when the page loads
+    loadNotices();
+  </script>
 </body>
 </html>

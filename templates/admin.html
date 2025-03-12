@@ -17,7 +17,9 @@
       </nav>
     </header>
 
+    <!-- Center everything inside .admin-main -->
     <main class="admin-main">
+      <!-- Add New Notice Form -->
       <section id="new-notice">
         <h2>Add New Notice</h2>
         <form id="new-notice-form" method="post" action="{{ url_for('add_notice') }}" enctype="multipart/form-data">
@@ -43,6 +45,7 @@
         </form>
       </section>
 
+      <!-- Existing Notices -->
       <section id="existing-notices">
         <h2>Existing Notices</h2>
         <div class="notices-grid">

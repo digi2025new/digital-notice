@@ -123,21 +123,26 @@ def admin():
 @app.route('/notices', methods=['POST'])
 @login_required
 def add_notice():
+    """Adds a new notice and redirects to #existing-notices to avoid jumping to top."""
     if 'file' not in request.files or 'department' not in request.form:
         return "Missing file or department field", 400
+
     file = request.files['file']
     title = request.form['title']
     department = request.form['department'].lower()
+
     if file.filename == '':
         return "No selected file"
+
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         absolute_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(absolute_path)
-        # Create a relative path with forward slashes for HTML use.
+
         relative_path = f"static/uploads/{filename}".replace("\\", "/")
         file_type = filename.rsplit('.', 1)[1].lower()
-        print("DEBUG: Storing in DB ->", relative_path)  # Debug info
+        print("DEBUG: Storing in DB ->", relative_path)
+
         conn = get_db_connection()
         try:
             conn.execute(
@@ -148,12 +153,16 @@ def add_notice():
             emit_notices_update()
         finally:
             conn.close()
-        return redirect(url_for('admin'))
+
+        # Redirect to the admin page and jump to the "existing-notices" section
+        return redirect(url_for('admin') + '#existing-notices')
+
     return "Invalid file type"
 
 @app.route('/notices/<int:notice_id>/delete', methods=['POST'])
 @login_required
 def delete_notice(notice_id):
+    """Deletes a notice and also redirects to #existing-notices."""
     conn = get_db_connection()
     try:
         notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
@@ -164,7 +173,9 @@ def delete_notice(notice_id):
             conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
             conn.commit()
             emit_notices_update()
-            return redirect(url_for('admin'))
+
+            # Redirect to #existing-notices so the user sees the updated list
+            return redirect(url_for('admin') + '#existing-notices')
         else:
             return "Notice not found"
     finally:

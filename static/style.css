@@ -38,7 +38,18 @@ header h1 {
     margin-bottom: 10px;
 }
 
-/* Department Selection Page */
+/* -------------------------------------------------- */
+/* Admin Main Container                               */
+/* -------------------------------------------------- */
+.admin-main {
+    width: 90%;
+    max-width: 1200px;  /* Adjust as needed for your layout */
+    margin: 0 auto;     /* Centers the admin content */
+    padding: 20px 0;
+    text-align: center;
+}
+
+/* Department Selection Page (if used) */
 .department-selection {
     display: flex;
     flex-direction: column;
@@ -55,7 +66,7 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 80vh; /* So it can occupy much of the screen */
+    min-height: 80vh;
     text-align: center;
     flex-direction: column;
 }
@@ -66,37 +77,31 @@ header h1 {
     flex-wrap: wrap;
     justify-content: center;
     gap: 20px;
-    width: 90%;
-    max-width: 1600px; /* Increased max width for large screens */
-    margin: 0 auto;
+    margin-top: 20px;
 }
 
 /* Individual Notice Styling */
 .notice {
-    /* Let .notice be wide enough to fill the screen */
-    display: block;
     background: white;
-    margin: 20px auto; /* Center horizontally */
     padding: 15px;
     border-radius: 8px;
     text-align: center;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-    width: 90%;            /* Take up most of the page width */
-    max-width: 1200px;     /* Cap it on very large screens */
     vertical-align: top;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
 /* Responsive Notice Display */
 .responsive-notice {
     width: 100%;
     height: auto;
-    /* Instead of 300px, allow more height */
-    max-height: 80vh;
-    object-fit: contain;  /* Ensures entire image is visible without cropping */
+    object-fit: contain;
     border-radius: 8px;
 }
 
-/* Fade-in effect (optional) */
+/* Fade-in effect for new notices (optional) */
 .fade-in {
     animation: fadeIn 0.8s ease-in-out;
 }
@@ -144,9 +149,10 @@ form {
     background: #f4f4f4;
     padding: 20px;
     border-radius: 10px;
-    width: 90%;
+    width: 100%;
     max-width: 500px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
 }
 
 .form-group {
@@ -163,7 +169,9 @@ select {
     border-radius: 5px;
 }
 
-/* Footer */
+/* -------------------------------------------------- */
+/* Footer                                             */
+/* -------------------------------------------------- */
 footer {
     margin-top: 20px;
     padding: 15px;
@@ -172,22 +180,20 @@ footer {
     width: 100%;
 }
 
-/* Mobile Responsive */
+/* -------------------------------------------------- */
+/* Mobile Responsive                                   */
+/* -------------------------------------------------- */
 @media (max-width: 768px) {
-    .container {
-        padding: 10px;
+    .admin-main {
+        width: 95%;
     }
     .notices-grid {
         flex-direction: column;
         align-items: center;
     }
     .notice {
-        width: 100%;
-        max-width: 100%;
-        margin: 10px auto;
-    }
-    .responsive-notice {
-        max-height: 60vh; /* Adjust for smaller screens if you wish */
+        width: 90%;
+        margin-bottom: 20px;
     }
 }
 

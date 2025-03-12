@@ -53,6 +53,7 @@ def emit_notices_update():
         conn.close()
 
 # --- Routes ---
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Handles admin login."""
@@ -90,7 +91,9 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    """Displays the public notice board."""
+    """Displays the main page (department selection or general info)."""
+    # If you have a department selection, you could render a page here
+    # or just redirect to an existing route. For now, we show index.html.
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -118,7 +121,7 @@ def get_department_notices(department):
     """Returns notices for a specific department as JSON."""
     conn = get_db_connection()
     try:
-        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC', 
+        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC',
                                (department,)).fetchall()
         notices_list = [dict(notice) for notice in notices]
         return jsonify(notices_list)
@@ -146,7 +149,7 @@ def add_notice():
 
     file = request.files['file']
     title = request.form['title']
-    department = request.form['department']  # Department field added
+    department = request.form['department']  # Department field
 
     if file.filename == '':
         return "No selected file"
@@ -160,8 +163,10 @@ def add_notice():
         conn = get_db_connection()
         try:
             # Ensure your 'notices' table includes a 'department' column.
-            conn.execute('INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)', 
-                         (title, file_path, file_type, department))
+            conn.execute(
+                'INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)',
+                (title, file_path, file_type, department)
+            )
             conn.commit()
             emit_notices_update()  # Trigger real-time update
         finally:
@@ -192,6 +197,19 @@ def delete_notice(notice_id):
             return "Notice not found"
     finally:
         conn.close()
+
+# --- NEW ROUTE FOR DEPARTMENT HTML PAGES ---
+@app.route('/department/<department>')
+def show_department_notices(department):
+    """Renders a webpage showing notices for a specific department."""
+    conn = get_db_connection()
+    try:
+        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC',
+                               (department,)).fetchall()
+    finally:
+        conn.close()
+    # Renders a template that displays images/videos instead of returning JSON
+    return render_template('department.html', notices=notices, department=department)
 
 # --- Run the App ---
 if __name__ == '__main__':

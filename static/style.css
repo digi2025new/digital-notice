@@ -61,7 +61,7 @@ header h1 {
     flex-direction: column;
 }
 
-/* Notice Grid (Used in Admin & Department Pages) */
+/* Notice Grid */
 .notices-grid {
     display: flex;
     flex-wrap: wrap;
@@ -69,7 +69,7 @@ header h1 {
     gap: 20px;
     width: 90%;
     max-width: 1200px;
-    margin: 0 auto; /* centers the grid container */
+    margin: 0 auto;
 }
 
 /* Individual Notice Styling */
@@ -82,7 +82,7 @@ header h1 {
     text-align: center;
     vertical-align: top;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-    max-width: 300px; /* Adjust as needed */
+    max-width: 300px;
 }
 
 /* Responsive Notice Display */
@@ -90,7 +90,7 @@ header h1 {
     width: 100%;
     height: auto;
     max-height: 300px;
-    object-fit: contain; /* Ensures entire image/video is visible */
+    object-fit: contain;
     border-radius: 8px;
 }
 
@@ -179,19 +179,16 @@ footer {
     .container {
         padding: 10px;
     }
-
     .notices-grid {
         flex-direction: column;
         align-items: center;
     }
-
     .notice {
         width: 90%;
         max-width: 100%;
     }
-
     .responsive-notice {
-        max-height: 250px; /* slightly smaller for mobile if desired */
+        max-height: 250px;
     }
 }
 

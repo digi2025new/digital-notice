@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 import sqlite3
 import os
-from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit
 
@@ -19,14 +18,12 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 def get_db_connection():
-    """Establishes and returns a database connection."""
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 def allowed_file(filename):
-    """Checks if uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- SocketIO Event Handlers ---
@@ -41,7 +38,6 @@ def test_disconnect():
 
 # --- Real-time Update Helper Function ---
 def emit_notices_update():
-    """Fetches and broadcasts the latest notices to all connected clients."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -55,26 +51,21 @@ def emit_notices_update():
 # --- Routes ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles admin login."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
         conn = get_db_connection()
         user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password)).fetchone()
         conn.close()
-
         if user:
             session['user_id'] = user['id']
             return redirect(url_for('admin'))
         else:
             return render_template('login.html', error='Invalid username or password')
-
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    """Logs out the admin."""
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
@@ -89,7 +80,6 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    """Displays the main page (department selection or general info)."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -98,12 +88,10 @@ def index():
         return "Database error. Check logs.", 500
     finally:
         conn.close()
-
     return render_template('index.html', notices=notices)
 
 @app.route('/notices')
 def get_notices():
-    """Returns all notices as JSON."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -114,11 +102,9 @@ def get_notices():
 
 @app.route('/notices/<department>')
 def get_department_notices(department):
-    """Returns notices for a specific department as JSON."""
     conn = get_db_connection()
     try:
-        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC',
-                               (department,)).fetchall()
+        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC', (department,)).fetchall()
         notices_list = [dict(notice) for notice in notices]
         return jsonify(notices_list)
     finally:
@@ -127,7 +113,6 @@ def get_department_notices(department):
 @app.route('/admin')
 @login_required
 def admin():
-    """Admin panel to manage notices."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -138,32 +123,21 @@ def admin():
 @app.route('/notices', methods=['POST'])
 @login_required
 def add_notice():
-    """Adds a new notice and updates the live display."""
     if 'file' not in request.files or 'department' not in request.form:
         return "Missing file or department field", 400
-
     file = request.files['file']
     title = request.form['title']
     department = request.form['department'].lower()
-
     if file.filename == '':
         return "No selected file"
-
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-
-        # Absolute path to save the file on the server
         absolute_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(absolute_path)
-
-        # Relative path for HTML <img> or <video> tags
+        # Create a relative path with forward slashes for HTML use.
         relative_path = f"static/uploads/{filename}".replace("\\", "/")
-
         file_type = filename.rsplit('.', 1)[1].lower()
-
-        # DEBUG: Print the final stored path in the logs
-        print("DEBUG: Storing in DB ->", relative_path)
-
+        print("DEBUG: Storing in DB ->", relative_path)  # Debug info
         conn = get_db_connection()
         try:
             conn.execute(
@@ -174,24 +148,19 @@ def add_notice():
             emit_notices_update()
         finally:
             conn.close()
-
         return redirect(url_for('admin'))
-
     return "Invalid file type"
 
 @app.route('/notices/<int:notice_id>/delete', methods=['POST'])
 @login_required
 def delete_notice(notice_id):
-    """Deletes a notice and updates the live display."""
     conn = get_db_connection()
     try:
         notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
-
         if notice:
             file_path = notice['file_path']
             if file_path and os.path.exists(file_path):
-                os.remove(file_path)  # Delete the file from the server
-
+                os.remove(file_path)
             conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
             conn.commit()
             emit_notices_update()
@@ -203,7 +172,6 @@ def delete_notice(notice_id):
 
 @app.route('/department/<department>')
 def show_department_notices(department):
-    """Renders a webpage showing notices for a specific department (case-insensitive)."""
     dept_lower = department.lower()
     conn = get_db_connection()
     try:
@@ -213,9 +181,7 @@ def show_department_notices(department):
         ).fetchall()
     finally:
         conn.close()
-
     return render_template('department.html', notices=notices, department=department)
 
-# --- Run the App ---
 if __name__ == '__main__':
     socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

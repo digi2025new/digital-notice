@@ -3,62 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <title>{{ department|upper }} Department Notices</title>
-  <!-- Make sure you have the updated style.css in static/style.css -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <!-- Department Header -->
   <header>
     <h1>{{ department|upper }} Department Notices</h1>
   </header>
-
-  <!-- Main Content -->
   <main>
-    <!-- Grid container for all notices -->
     <div class="notices-grid">
       {% for notice in notices %}
         <div class="notice">
           {% if notice.file_type in ['png', 'jpg', 'jpeg', 'gif'] %}
-            <!-- Image Notice -->
-            <img 
-              src="{{ notice.file_path }}" 
-              alt="{{ notice.title }}" 
-              class="responsive-notice"
-            >
+            <img src="{{ notice.file_path }}" alt="{{ notice.title }}" class="responsive-notice">
           {% elif notice.file_type in ['mp4', 'avi', 'mov'] %}
-            <!-- Video Notice -->
-            <video 
-              src="{{ notice.file_path }}" 
-              controls 
-              class="responsive-notice"
-            ></video>
+            <video src="{{ notice.file_path }}" controls class="responsive-notice"></video>
           {% elif notice.file_type in ['mp3', 'wav'] %}
-            <!-- Audio Notice -->
-            <audio 
-              src="{{ notice.file_path }}" 
-              controls
-            ></audio>
+            <audio src="{{ notice.file_path }}" controls class="responsive-notice"></audio>
           {% else %}
-            <!-- Other File Types -->
             <p>
-              File: 
-              <a 
-                href="{{ notice.file_path }}" 
-                target="_blank"
-              >
-                {{ notice.title }}
-              </a>
+              File: <a href="{{ notice.file_path }}" target="_blank">{{ notice.title }}</a>
               ({{ notice.file_type }})
             </p>
           {% endif %}
-          <!-- Notice Title -->
           <h3>{{ notice.title }}</h3>
         </div>
       {% endfor %}
     </div>
   </main>
-
-  <!-- Footer -->
   <footer>
     <p>&copy; 2025 Digital Notice Board</p>
   </footer>

@@ -9,7 +9,7 @@ app.secret_key = "YOUR_SECRET_KEY"  # Change this to a strong, random key!
 
 # --- Configuration ---
 DB_NAME = 'noticeboard.db'
-UPLOAD_FOLDER = 'static/uploads'  # Directory to store uploaded files
+UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -18,12 +18,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 def get_db_connection():
+    """Establishes and returns a database connection."""
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 def allowed_file(filename):
+    """Checks if the uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- SocketIO Event Handlers ---
@@ -38,19 +40,20 @@ def test_disconnect():
 
 # --- Real-time Update Helper Function ---
 def emit_notices_update():
+    """Fetches and broadcasts the latest notices to all connected clients."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
         notices_list = [dict(notice) for notice in notices]
         socketio.emit('update_notices', {'notices': notices_list})
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
     finally:
         conn.close()
 
 # --- Routes ---
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles admin login."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -66,10 +69,12 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logs out the admin."""
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
 def login_required(f):
+    """Decorator for protecting routes that require login."""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -80,39 +85,33 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    try:
-        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    except sqlite3.OperationalError as e:
-        print(f"Database error: {e}")
-        return "Database error. Check logs.", 500
-    finally:
-        conn.close()
-    return render_template('index.html', notices=notices)
+    """Renders the main slideshow page (index.html)."""
+    return render_template('index.html')
 
 @app.route('/notices')
 def get_notices():
+    """Returns all notices as JSON for the slideshow."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-        notices_list = [dict(notice) for notice in notices]
-        return jsonify(notices_list)
+        return jsonify([dict(notice) for notice in notices])
     finally:
         conn.close()
 
 @app.route('/notices/<department>')
 def get_department_notices(department):
+    """Returns notices for a specific department as JSON."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC', (department,)).fetchall()
-        notices_list = [dict(notice) for notice in notices]
-        return jsonify(notices_list)
+        return jsonify([dict(notice) for notice in notices])
     finally:
         conn.close()
 
 @app.route('/admin')
 @login_required
 def admin():
+    """Admin panel to manage notices."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -123,7 +122,7 @@ def admin():
 @app.route('/notices', methods=['POST'])
 @login_required
 def add_notice():
-    """Adds a new notice and redirects to #existing-notices to avoid jumping to top."""
+    """Adds a new notice, then redirects to #existing-notices to avoid page jump."""
     if 'file' not in request.files or 'department' not in request.form:
         return "Missing file or department field", 400
 
@@ -139,9 +138,9 @@ def add_notice():
         absolute_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(absolute_path)
 
+        # Store a relative path for HTML use
         relative_path = f"static/uploads/{filename}".replace("\\", "/")
         file_type = filename.rsplit('.', 1)[1].lower()
-        print("DEBUG: Storing in DB ->", relative_path)
 
         conn = get_db_connection()
         try:
@@ -154,7 +153,7 @@ def add_notice():
         finally:
             conn.close()
 
-        # Redirect to the admin page and jump to the "existing-notices" section
+        # Redirect to admin, anchored at existing-notices
         return redirect(url_for('admin') + '#existing-notices')
 
     return "Invalid file type"
@@ -162,7 +161,7 @@ def add_notice():
 @app.route('/notices/<int:notice_id>/delete', methods=['POST'])
 @login_required
 def delete_notice(notice_id):
-    """Deletes a notice and also redirects to #existing-notices."""
+    """Deletes a notice, then redirects to #existing-notices."""
     conn = get_db_connection()
     try:
         notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
@@ -174,7 +173,7 @@ def delete_notice(notice_id):
             conn.commit()
             emit_notices_update()
 
-            # Redirect to #existing-notices so the user sees the updated list
+            # Redirect to admin, anchored at existing-notices
             return redirect(url_for('admin') + '#existing-notices')
         else:
             return "Notice not found"
@@ -183,6 +182,7 @@ def delete_notice(notice_id):
 
 @app.route('/department/<department>')
 def show_department_notices(department):
+    """Renders a webpage showing notices for a specific department."""
     dept_lower = department.lower()
     conn = get_db_connection()
     try:

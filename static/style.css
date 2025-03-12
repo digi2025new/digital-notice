@@ -1,76 +1,150 @@
 /* -------------------------------------------------- */
-/* Reset & Basic Layout                                */
+/* Basic Reset & Layout                                */
 /* -------------------------------------------------- */
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%; /* Let body fill entire viewport height */
-    width: 100%;
-    font-family: Arial, sans-serif;
     background: #f8f9fa;
     text-align: center;
+    font-family: Arial, sans-serif;
 }
 
-/* Container for the entire page */
+/* The main container for the entire page */
 .container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Fill viewport vertically */
+    min-height: 100vh; /* Fill vertical space */
     width: 100%;
-    text-align: center;
 }
 
-/* Header & Footer occupy minimal space at top & bottom */
+/* Header & Footer */
 header, footer {
     background: #007bff;
     color: white;
     padding: 15px;
     width: 100%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* Main slideshow area expands to fill remaining space */
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.logo {
+    max-height: 60px;
+    margin-bottom: 10px;
+}
+
+/* -------------------------------------------------- */
+/* Slideshow in Index Page                            */
+/* -------------------------------------------------- */
 main {
-    flex: 1; /* Takes remaining vertical space between header & footer */
-    display: flex;
-    align-items: center; 
-    justify-content: center;
-}
-
-/* The #notices container also stretches & centers content */
-#notices {
-    width: 100%;
-    height: 100%;
+    flex: 1; /* Occupies space between header & footer */
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 20px;
 }
 
-/* A single notice container filling most of the screen */
-.notice {
+/* The #notices container for the current notice */
+#notices {
     width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center;
+    max-width: 800px; /* The notice won't exceed 800px in width */
+    margin: 0 auto;
 }
 
-/* Make images & videos fill the screen (minus header/footer) */
+/* A single notice container */
+.notice {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* The media element (img/video/audio) scaling to fit .notice */
 .responsive-notice {
     width: 100%;
-    height: 100%;
-    object-fit: contain; /* or 'cover' if you want it cropped to fill entire area */
+    height: auto;
+    max-height: 70vh; /* So it doesn't exceed 70% of the viewport height */
+    object-fit: contain;
+    border-radius: 8px;
     background: #fff;
-    border-radius: 0; /* No rounded corners for a clean full-screen look */
 }
 
-/* Title displayed below the media, if desired */
+/* Title below the media */
 .notice h3 {
+    margin-top: 15px;
+    font-size: 18px;
     color: #333;
-    margin-top: 10px;
 }
 
-/* Buttons & forms (for admin, etc.) */
+/* Footer styling */
+footer p {
+    margin: 0;
+}
+
+/* -------------------------------------------------- */
+/* Admin Page Layout                                  */
+/* -------------------------------------------------- */
+/* Center the admin content with a max width */
+.admin-main {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 0;
+    text-align: center;
+}
+
+#new-notice, #existing-notices {
+    margin-bottom: 30px;
+}
+
+/* The notices grid on admin page */
+.notices-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.notice {
+    width: 300px; /* For admin page notices */
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+/* Forms */
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f4f4f4;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+input[type="text"],
+input[type="file"],
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Buttons */
 .btn {
     padding: 10px 15px;
     border: none;
@@ -79,22 +153,107 @@ main {
     border-radius: 5px;
     transition: 0.3s;
 }
+
 .btn-primary {
     background: #007bff;
     color: white;
 }
+
 .btn-danger {
     background: #dc3545;
     color: white;
 }
+
 .btn:hover {
     opacity: 0.8;
 }
 
-/* Media query for smaller screens */
+/* -------------------------------------------------- */
+/* Mobile Responsive                                   */
+/* -------------------------------------------------- */
 @media (max-width: 768px) {
-    .responsive-notice {
-        /* Possibly reduce height to avoid mobile overscroll */
-        object-fit: contain;
+    main {
+        padding: 10px;
     }
+    #notices {
+        max-width: 95%;
+    }
+    .responsive-notice {
+        max-height: 50vh; /* Slightly smaller for mobile */
+    }
+    .admin-main {
+        width: 95%;
+    }
+    .notice {
+        width: 90%;
+        margin-bottom: 20px;
+    }
+}
+
+/* -------------------------------------------------- */
+/* Login Page Styles                                  */
+/* -------------------------------------------------- */
+.login-body {
+    margin: 0;
+    padding: 0;
+    background: #f8f9fa;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    text-align: center;
+}
+
+.login-header,
+.login-footer {
+    background: #007bff;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+}
+
+.login-header .logo {
+    max-height: 60px;
+    margin-bottom: 10px;
+}
+
+.login-container {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-form {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    width: 400px;
+    max-width: 90%;
+    text-align: left;
+}
+
+.login-form .form-group {
+    margin-bottom: 20px;
+}
+
+.login-form .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.login-form .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.error-message {
+    color: red;
+    margin-bottom: 10px;
+    font-weight: bold;
 }

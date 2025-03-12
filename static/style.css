@@ -49,7 +49,9 @@ header h1 {
     padding: 20px;
 }
 
-/* Notices Section */
+/* -------------------------------------------------- */
+/* Notices Section                                    */
+/* -------------------------------------------------- */
 #notices {
     display: flex;
     align-items: center;
@@ -67,33 +69,32 @@ header h1 {
     gap: 20px;
     width: 90%;
     max-width: 1200px;
+    margin: 0 auto; /* centers the grid container */
 }
 
 /* Individual Notice Styling */
 .notice {
+    display: inline-block;        /* allows side-by-side if space permits */
     background: white;
+    margin: 10px;
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
     text-align: center;
-    transition: transform 0.3s ease-in-out;
-}
-
-.notice:hover {
-    transform: scale(1.02);
+    vertical-align: top;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    max-width: 300px;            /* adjust as needed */
 }
 
 /* Responsive Notice Display */
 .responsive-notice {
     width: 100%;
     height: auto;
-    max-height: 90vh;
-    object-fit: contain;
+    max-height: 300px;           /* prevents overly tall images/videos */
+    object-fit: contain;         /* keeps full image visible without cropping */
     border-radius: 8px;
 }
 
-/* Fade-in effect for new notices */
+/* Fade-in effect for new notices (optional) */
 .fade-in {
     animation: fadeIn 0.8s ease-in-out;
 }
@@ -160,7 +161,9 @@ select {
     border-radius: 5px;
 }
 
-/* Footer */
+/* -------------------------------------------------- */
+/* Footer                                             */
+/* -------------------------------------------------- */
 footer {
     margin-top: 20px;
     padding: 15px;
@@ -169,7 +172,9 @@ footer {
     width: 100%;
 }
 
-/* Mobile Responsive */
+/* -------------------------------------------------- */
+/* Mobile Responsive                                   */
+/* -------------------------------------------------- */
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -182,29 +187,28 @@ footer {
 
     .notice {
         width: 90%;
+        max-width: 100%; /* ensures notice doesn't overflow on small screens */
     }
 
     .responsive-notice {
-        max-height: 70vh;
+        max-height: 250px; /* adjust for smaller screens if you like */
     }
 }
 
 /* -------------------------------------------------- */
 /* Login Page Styles                                  */
 /* -------------------------------------------------- */
-/* Body for Login Page */
 .login-body {
     margin: 0;
     padding: 0;
-    background: #f8f9fa; /* Light gray background for contrast */
+    background: #f8f9fa;
     font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Ensures footer stays at bottom */
+    min-height: 100vh;
     text-align: center;
 }
 
-/* Header and Footer for Login */
 .login-header,
 .login-footer {
     background: #007bff;
@@ -218,27 +222,24 @@ footer {
     margin-bottom: 10px;
 }
 
-/* Container for Centering the Form in the Login Page */
 .login-container {
     display: flex;
-    flex: 1; /* Expands to fill remaining vertical space */
+    flex: 1;
     align-items: center;
     justify-content: center;
     padding: 20px;
 }
 
-/* The Login Form Box */
 .login-form {
     background: #fff;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
     width: 400px;
-    max-width: 90%; /* Responsive on smaller screens */
+    max-width: 90%;
     text-align: left;
 }
 
-/* Form Groups in Login Form */
 .login-form .form-group {
     margin-bottom: 20px;
 }
@@ -247,7 +248,6 @@ footer {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    text-align: left;
 }
 
 .login-form .form-group input {
@@ -257,7 +257,6 @@ footer {
     border-radius: 5px;
 }
 
-/* Error Message for Login */
 .error-message {
     color: red;
     margin-bottom: 10px;

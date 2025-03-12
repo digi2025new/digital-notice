@@ -1,4 +1,6 @@
-/* General Styles */
+/* -------------------------------------------------- */
+/* General Styles                                      */
+/* -------------------------------------------------- */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -35,6 +37,16 @@ header h1 {
 .logo {
     max-height: 60px;
     margin-bottom: 10px;
+}
+
+/* Department Selection Page */
+.department-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
 }
 
 /* Notices Section */
@@ -74,8 +86,9 @@ header h1 {
 
 /* Responsive Notice Display */
 .responsive-notice {
-    max-width: 100%;
-    max-height: 60vh;
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
     object-fit: contain;
     border-radius: 8px;
 }
@@ -86,8 +99,14 @@ header h1 {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Buttons */
@@ -132,7 +151,9 @@ form {
     width: 100%;
 }
 
-input[type="text"], input[type="file"] {
+input[type="text"],
+input[type="file"],
+select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
@@ -164,6 +185,81 @@ footer {
     }
 
     .responsive-notice {
-        max-height: 50vh;
+        max-height: 70vh;
     }
+}
+
+/* -------------------------------------------------- */
+/* Login Page Styles                                  */
+/* -------------------------------------------------- */
+/* Body for Login Page */
+.login-body {
+    margin: 0;
+    padding: 0;
+    background: #f8f9fa; /* Light gray background for contrast */
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensures footer stays at bottom */
+    text-align: center;
+}
+
+/* Header and Footer for Login */
+.login-header,
+.login-footer {
+    background: #007bff;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+}
+
+.login-header .logo {
+    max-height: 60px;
+    margin-bottom: 10px;
+}
+
+/* Container for Centering the Form in the Login Page */
+.login-container {
+    display: flex;
+    flex: 1; /* Expands to fill remaining vertical space */
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* The Login Form Box */
+.login-form {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    width: 400px;
+    max-width: 90%; /* Responsive on smaller screens */
+    text-align: left;
+}
+
+/* Form Groups in Login Form */
+.login-form .form-group {
+    margin-bottom: 20px;
+}
+
+.login-form .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    text-align: left;
+}
+
+.login-form .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Error Message for Login */
+.error-message {
+    color: red;
+    margin-bottom: 10px;
+    font-weight: bold;
 }

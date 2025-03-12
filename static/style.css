@@ -9,7 +9,6 @@ body {
     text-align: center;
 }
 
-/* Container */
 .container {
     display: flex;
     flex-direction: column;
@@ -56,7 +55,7 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 80vh;
+    min-height: 80vh; /* So it can occupy much of the screen */
     text-align: center;
     flex-direction: column;
 }
@@ -68,33 +67,36 @@ header h1 {
     justify-content: center;
     gap: 20px;
     width: 90%;
-    max-width: 1200px;
+    max-width: 1600px; /* Increased max width for large screens */
     margin: 0 auto;
 }
 
 /* Individual Notice Styling */
 .notice {
-    display: inline-block;
+    /* Let .notice be wide enough to fill the screen */
+    display: block;
     background: white;
-    margin: 10px;
+    margin: 20px auto; /* Center horizontally */
     padding: 15px;
     border-radius: 8px;
     text-align: center;
-    vertical-align: top;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-    max-width: 300px;
+    width: 90%;            /* Take up most of the page width */
+    max-width: 1200px;     /* Cap it on very large screens */
+    vertical-align: top;
 }
 
 /* Responsive Notice Display */
 .responsive-notice {
     width: 100%;
     height: auto;
-    max-height: 300px;
-    object-fit: contain;
+    /* Instead of 300px, allow more height */
+    max-height: 80vh;
+    object-fit: contain;  /* Ensures entire image is visible without cropping */
     border-radius: 8px;
 }
 
-/* Fade-in effect for new notices (optional) */
+/* Fade-in effect (optional) */
 .fade-in {
     animation: fadeIn 0.8s ease-in-out;
 }
@@ -161,9 +163,7 @@ select {
     border-radius: 5px;
 }
 
-/* -------------------------------------------------- */
-/* Footer                                             */
-/* -------------------------------------------------- */
+/* Footer */
 footer {
     margin-top: 20px;
     padding: 15px;
@@ -172,9 +172,7 @@ footer {
     width: 100%;
 }
 
-/* -------------------------------------------------- */
-/* Mobile Responsive                                   */
-/* -------------------------------------------------- */
+/* Mobile Responsive */
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -184,11 +182,12 @@ footer {
         align-items: center;
     }
     .notice {
-        width: 90%;
+        width: 100%;
         max-width: 100%;
+        margin: 10px auto;
     }
     .responsive-notice {
-        max-height: 250px;
+        max-height: 60vh; /* Adjust for smaller screens if you wish */
     }
 }
 

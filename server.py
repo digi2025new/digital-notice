@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.secret_key = "YOUR_SECRET_KEY"  # Change this to a strong, random key!
+app.secret_key = "YOUR_SECRET_KEY"  # Replace with a strong key!
 
 # --- Configuration ---
 DB_NAME = 'noticeboard.db'
@@ -18,14 +18,12 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 def get_db_connection():
-    """Establishes and returns a database connection."""
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 def allowed_file(filename):
-    """Checks if the uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- SocketIO Event Handlers ---
@@ -38,9 +36,7 @@ def test_connect():
 def test_disconnect():
     print('Client disconnected')
 
-# --- Real-time Update Helper Function ---
 def emit_notices_update():
-    """Fetches and broadcasts the latest notices to all connected clients."""
     conn = get_db_connection()
     try:
         notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
@@ -53,7 +49,6 @@ def emit_notices_update():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles admin login."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -69,12 +64,10 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """Logs out the admin."""
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
 def login_required(f):
-    """Decorator for protecting routes that require login."""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -85,104 +78,16 @@ def login_required(f):
 
 @app.route('/')
 def index():
-    """Renders the main slideshow page (index.html)."""
+    # Public slideshow of all notices
     return render_template('index.html')
 
-@app.route('/notices')
-def get_notices():
-    """Returns all notices as JSON for the slideshow."""
-    conn = get_db_connection()
-    try:
-        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-        return jsonify([dict(notice) for notice in notices])
-    finally:
-        conn.close()
-
-@app.route('/notices/<department>')
-def get_department_notices(department):
-    """Returns notices for a specific department as JSON."""
-    conn = get_db_connection()
-    try:
-        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC', (department,)).fetchall()
-        return jsonify([dict(notice) for notice in notices])
-    finally:
-        conn.close()
-
-@app.route('/admin')
-@login_required
-def admin():
-    """Admin panel to manage notices."""
-    conn = get_db_connection()
-    try:
-        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    finally:
-        conn.close()
-    return render_template('admin.html', notices=notices)
-
-@app.route('/notices', methods=['POST'])
-@login_required
-def add_notice():
-    """Adds a new notice, then redirects to #existing-notices to avoid page jump."""
-    if 'file' not in request.files or 'department' not in request.form:
-        return "Missing file or department field", 400
-
-    file = request.files['file']
-    title = request.form['title']
-    department = request.form['department'].lower()
-
-    if file.filename == '':
-        return "No selected file"
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        absolute_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(absolute_path)
-
-        # Store a relative path for HTML use
-        relative_path = f"static/uploads/{filename}".replace("\\", "/")
-        file_type = filename.rsplit('.', 1)[1].lower()
-
-        conn = get_db_connection()
-        try:
-            conn.execute(
-                'INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)',
-                (title, relative_path, file_type, department)
-            )
-            conn.commit()
-            emit_notices_update()
-        finally:
-            conn.close()
-
-        # Redirect to admin, anchored at existing-notices
-        return redirect(url_for('admin') + '#existing-notices')
-
-    return "Invalid file type"
-
-@app.route('/notices/<int:notice_id>/delete', methods=['POST'])
-@login_required
-def delete_notice(notice_id):
-    """Deletes a notice, then redirects to #existing-notices."""
-    conn = get_db_connection()
-    try:
-        notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
-        if notice:
-            file_path = notice['file_path']
-            if file_path and os.path.exists(file_path):
-                os.remove(file_path)
-            conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
-            conn.commit()
-            emit_notices_update()
-
-            # Redirect to admin, anchored at existing-notices
-            return redirect(url_for('admin') + '#existing-notices')
-        else:
-            return "Notice not found"
-    finally:
-        conn.close()
+@app.route('/branch')
+def branch():
+    # Branch selection page
+    return render_template('branch.html')
 
 @app.route('/department/<department>')
 def show_department_notices(department):
-    """Renders a webpage showing notices for a specific department."""
     dept_lower = department.lower()
     conn = get_db_connection()
     try:
@@ -193,6 +98,84 @@ def show_department_notices(department):
     finally:
         conn.close()
     return render_template('department.html', notices=notices, department=department)
+
+@app.route('/notices')
+def get_notices():
+    conn = get_db_connection()
+    try:
+        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
+        return jsonify([dict(notice) for notice in notices])
+    finally:
+        conn.close()
+
+@app.route('/notices/<department>')
+def get_department_notices(department):
+    conn = get_db_connection()
+    try:
+        notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC', (department,)).fetchall()
+        return jsonify([dict(notice) for notice in notices])
+    finally:
+        conn.close()
+
+@app.route('/admin')
+@login_required
+def admin():
+    conn = get_db_connection()
+    try:
+        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
+    finally:
+        conn.close()
+    return render_template('admin.html', notices=notices)
+
+@app.route('/notices', methods=['POST'])
+@login_required
+def add_notice():
+    if 'file' not in request.files or 'department' not in request.form:
+        return "Missing file or department field", 400
+    file = request.files['file']
+    title = request.form['title']
+    department = request.form['department'].lower()
+    if file.filename == '':
+        return "No selected file"
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        absolute_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(absolute_path)
+        relative_path = f"static/uploads/{filename}".replace("\\", "/")
+        file_type = filename.rsplit('.', 1)[1].lower()
+        print("DEBUG: Storing in DB ->", relative_path)
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                'INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)',
+                (title, relative_path, file_type, department)
+            )
+            conn.commit()
+            emit_notices_update()
+        finally:
+            conn.close()
+        # Redirect so that admin page reloads at the existing notices section
+        return redirect(url_for('admin') + '#existing-notices')
+    return "Invalid file type"
+
+@app.route('/notices/<int:notice_id>/delete', methods=['POST'])
+@login_required
+def delete_notice(notice_id):
+    conn = get_db_connection()
+    try:
+        notice = conn.execute('SELECT * FROM notices WHERE id = ?', (notice_id,)).fetchone()
+        if notice:
+            file_path = notice['file_path']
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
+            conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
+            conn.commit()
+            emit_notices_update()
+            return redirect(url_for('admin') + '#existing-notices')
+        else:
+            return "Notice not found"
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

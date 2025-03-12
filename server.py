@@ -119,8 +119,6 @@ def get_department_notices(department):
     """Returns notices for a specific department as JSON."""
     conn = get_db_connection()
     try:
-        # If your DB stores 'IT' but the route is '/notices/it', 
-        # you may need to do lower(...) on both sides, similarly to the HTML route below.
         notices = conn.execute('SELECT * FROM notices WHERE department = ? ORDER BY timestamp DESC',
                                (department,)).fetchall()
         notices_list = [dict(notice) for notice in notices]
@@ -143,13 +141,11 @@ def admin():
 @login_required
 def add_notice():
     """Adds a new notice and updates the live display."""
-    # Ensure both file and department are provided
     if 'file' not in request.files or 'department' not in request.form:
         return "Missing file or department field", 400
 
     file = request.files['file']
     title = request.form['title']
-    # Convert department to lowercase to maintain consistency
     department = request.form['department'].lower()
 
     if file.filename == '':
@@ -157,16 +153,22 @@ def add_notice():
 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        file_type = filename.rsplit('.', 1)[1].lower()  # Extract file extension
+
+        # Absolute path to save on the server
+        absolute_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(absolute_path)
+
+        # Relative path for HTML <img> or <video> tags
+        # Replace any backslashes with forward slashes
+        relative_path = f"static/uploads/{filename}".replace("\\", "/")
+
+        file_type = filename.rsplit('.', 1)[1].lower()
 
         conn = get_db_connection()
         try:
-            # Ensure your 'notices' table includes a 'department' column.
             conn.execute(
                 'INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)',
-                (title, file_path, file_type, department)
+                (title, relative_path, file_type, department)
             )
             conn.commit()
             emit_notices_update()  # Trigger real-time update
@@ -199,14 +201,12 @@ def delete_notice(notice_id):
     finally:
         conn.close()
 
-# --- NEW ROUTE FOR DEPARTMENT HTML PAGES ---
 @app.route('/department/<department>')
 def show_department_notices(department):
     """Renders a webpage showing notices for a specific department (case-insensitive)."""
-    dept_lower = department.lower()  # Convert route param to lowercase
+    dept_lower = department.lower()
     conn = get_db_connection()
     try:
-        # Compare using lower(department) in DB
         notices = conn.execute(
             'SELECT * FROM notices WHERE lower(department) = ? ORDER BY timestamp DESC',
             (dept_lower,)

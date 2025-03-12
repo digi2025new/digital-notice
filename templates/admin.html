@@ -52,7 +52,8 @@
             <div class="notice">
               <h3>{{ notice.title }}</h3>
               {% if notice.file_path %}
-                <p><strong>File:</strong>
+                <p>
+                  <strong>File:</strong>
                   <a href="{{ notice.file_path }}" target="_blank">{{ notice.file_path }}</a>
                 </p>
               {% endif %}

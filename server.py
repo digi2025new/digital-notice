@@ -1,26 +1,24 @@
-from flask import Flask, request, render_template, redirect, url_for, session, jsonify
+from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 import sqlite3
 import os
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.secret_key = "YOUR_SECRET_KEY"  # Change this to a strong secret key
+app.secret_key = "YOUR_STRONG_SECRET_KEY"  # Replace with your strong secret key
 
-# Database configuration
-DB_NAME = 'noticeboard.db'
-
-# File upload configuration
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'avi', 'mov', 'mp3', 'wav', 'pdf', 'docx', 'pptx', 'txt'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# --- Configuration ---
+DB_NAME = "noticeboard.db"
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "avi", "mov", "mp3", "wav", "pdf", "docx", "pptx", "txt"}
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Enable WebSockets for real-time updates
+# --- SocketIO Setup ---
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ----------------------------------------
-# 🚀 DATABASE CONNECTION & FUNCTIONS
+# Database Functions and Initialization
 # ----------------------------------------
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
@@ -29,154 +27,203 @@ def get_db_connection():
     return conn
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.',1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def emit_notices_update():
-    """ Sends real-time updates to all connected clients """
-    conn = get_db_connection()
-    try:
-        notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-        notices_list = [dict(notice) for notice in notices]
-        socketio.emit('update_notices', {'notices': notices_list})
-    finally:
-        conn.close()
-
-# ----------------------------------------
-# 🏠 HOME PAGE (SHOW NOTICES)
-# ----------------------------------------
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# ----------------------------------------
-# 🔐 ADMIN LOGIN
-# ----------------------------------------
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        if username == 'dbit.in' and password == 'dbit@123':
-            session['admin'] = True
-            return redirect(url_for('admin'))
-
-        return "Invalid credentials! Try again."
-
-    return render_template('login.html')
-
-# ----------------------------------------
-# 🚪 LOGOUT
-# ----------------------------------------
-@app.route('/logout')
-def logout():
-    session.pop('admin', None)
-    return redirect(url_for('index'))
-
-# ----------------------------------------
-# 🛠️ ADMIN PANEL (UPLOAD & DELETE NOTICES)
-# ----------------------------------------
-@app.route('/admin', methods=['GET', 'POST'])
-def admin():
-    if not session.get('admin'):
-        return redirect(url_for('login'))
-
-    conn = get_db_connection()
-    notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    conn.close()
-    return render_template('admin.html', notices=notices)
-
-# ----------------------------------------
-# 📤 UPLOAD NOTICE
-# ----------------------------------------
-@app.route('/upload', methods=['POST'])
-def upload():
-    if not session.get('admin'):
-        return redirect(url_for('login'))
-
-    if 'file' not in request.files:
-        return "No file uploaded!", 400
-
-    file = request.files['file']
-    title = request.form.get('title', 'Untitled Notice')
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        file_type = filename.rsplit('.', 1)[1].lower()
-
-        conn = get_db_connection()
-        conn.execute('INSERT INTO notices (title, file_path, file_type) VALUES (?, ?, ?)',
-                     (title, filepath, file_type))
-        conn.commit()
-        conn.close()
-
-        emit_notices_update()
-        return redirect(url_for('admin'))
-
-    return "Invalid file type!", 400
-
-# ----------------------------------------
-# 🗑️ DELETE NOTICE
-# ----------------------------------------
-@app.route('/delete/<int:notice_id>', methods=['POST'])
-def delete_notice(notice_id):
-    if not session.get('admin'):
-        return redirect(url_for('login'))
-
-    conn = get_db_connection()
-    notice = conn.execute('SELECT file_path FROM notices WHERE id = ?', (notice_id,)).fetchone()
-    
-    if notice:
-        os.remove(notice['file_path'])  # Delete the file from the server
-        conn.execute('DELETE FROM notices WHERE id = ?', (notice_id,))
-        conn.commit()
-    
-    conn.close()
-    emit_notices_update()
-    return redirect(url_for('admin'))
-
-# ----------------------------------------
-# 📰 GET NOTICES (JSON for JavaScript)
-# ----------------------------------------
-@app.route('/notices')
-def get_notices():
-    conn = get_db_connection()
-    notices = conn.execute('SELECT * FROM notices ORDER BY timestamp DESC').fetchall()
-    conn.close()
-    return jsonify([dict(notice) for notice in notices])
-
-# ----------------------------------------
-# 🔗 WEBSOCKET EVENTS
-# ----------------------------------------
-@socketio.on('connect')
-def client_connect():
-    print("Client connected!")
-    emit_notices_update()
-
-@socketio.on('disconnect')
-def client_disconnect():
-    print("Client disconnected!")
-
-# ----------------------------------------
-# 🚀 INITIALIZE DATABASE (RUN ONCE)
-# ----------------------------------------
 def init_db():
+    """Drop old tables and create fresh ones."""
     conn = get_db_connection()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS notices (
+    cur = conn.cursor()
+    # Drop old tables to reset database (remove these lines if you want to preserve data)
+    cur.execute("DROP TABLE IF EXISTS users")
+    cur.execute("DROP TABLE IF EXISTS notices")
+    # Create users table for admin login
+    cur.execute("""
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
+    # Create notices table for uploaded notices
+    cur.execute("""
+        CREATE TABLE notices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             file_path TEXT NOT NULL,
             file_type TEXT NOT NULL,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            department TEXT NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    ''')
+    """)
+    # Insert default admin user (change credentials as needed)
+    cur.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("admin", "admin123"))
     conn.commit()
     conn.close()
 
-if __name__ == '__main__':
-    init_db()  # Ensures the database is ready
-    socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+# ----------------------------------------
+# Socket.IO Event Handlers and Update Function
+# ----------------------------------------
+@socketio.on("connect")
+def on_connect():
+    print("Client connected")
+    emit_notices_update()
+
+@socketio.on("disconnect")
+def on_disconnect():
+    print("Client disconnected")
+
+def emit_notices_update():
+    """Fetch and emit the latest notices to all connected clients."""
+    conn = get_db_connection()
+    try:
+        notices = conn.execute("SELECT * FROM notices ORDER BY timestamp DESC").fetchall()
+        notices_list = [dict(n) for n in notices]
+        socketio.emit("update_notices", {"notices": notices_list})
+    finally:
+        conn.close()
+
+# ----------------------------------------
+# Helper: Login Required Decorator
+# ----------------------------------------
+def login_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ----------------------------------------
+# Routes
+# ----------------------------------------
+
+@app.route("/")
+def index():
+    """Public slideshow page (all notices)."""
+    return render_template("index.html")
+
+@app.route("/branch")
+def branch_page():
+    """Branch selection page where users choose a department."""
+    return render_template("branch.html")
+
+@app.route("/department/<dept>")
+def show_department(dept):
+    """Department-specific page showing notices only for the given department."""
+    conn = get_db_connection()
+    try:
+        notices = conn.execute(
+            "SELECT * FROM notices WHERE lower(department)=? ORDER BY timestamp DESC",
+            (dept.lower(),)
+        ).fetchall()
+    finally:
+        conn.close()
+    return render_template("department.html", department=dept.upper(), notices=notices)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Admin login page."""
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        conn = get_db_connection()
+        user = conn.execute(
+            "SELECT * FROM users WHERE username=? AND password=?",
+            (username, password)
+        ).fetchone()
+        conn.close()
+        if user:
+            session["user_id"] = user["id"]
+            return redirect(url_for("admin_panel"))
+        else:
+            return render_template("login.html", error="Invalid username or password.")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    """Log out admin and redirect to login."""
+    session.pop("user_id", None)
+    return redirect(url_for("login"))
+
+@app.route("/admin")
+@login_required
+def admin_panel():
+    """Admin panel for managing notices."""
+    conn = get_db_connection()
+    try:
+        notices = conn.execute("SELECT * FROM notices ORDER BY timestamp DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin.html", notices=notices)
+
+@app.route("/upload", methods=["POST"])
+@login_required
+def upload_notice():
+    """Handle file upload for new notice."""
+    if "file" not in request.files or "department" not in request.form:
+        return "Missing file or department", 400
+    file = request.files["file"]
+    title = request.form["title"]
+    department = request.form["department"].lower()
+    if file.filename == "":
+        return "No file selected", 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        absolute_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(absolute_path)
+        # Store relative path for proper HTML rendering
+        relative_path = f"static/uploads/{filename}".replace("\\", "/")
+        file_type = filename.rsplit(".", 1)[1].lower()
+        print("DEBUG: Storing in DB ->", relative_path)
+        conn = get_db_connection()
+        try:
+            conn.execute("""
+                INSERT INTO notices (title, file_path, file_type, department)
+                VALUES (?, ?, ?, ?)
+            """, (title, relative_path, file_type, department))
+            conn.commit()
+        finally:
+            conn.close()
+        emit_notices_update()
+        # Redirect to admin panel anchored at existing notices
+        return redirect(url_for("admin_panel") + "#existing-notices")
+    return "Invalid file type", 400
+
+@app.route("/delete/<int:notice_id>", methods=["POST"])
+@login_required
+def delete_notice(notice_id):
+    """Delete a notice and remove the file from the server."""
+    conn = get_db_connection()
+    try:
+        notice = conn.execute("SELECT file_path FROM notices WHERE id=?", (notice_id,)).fetchone()
+        if notice:
+            file_path = notice["file_path"]
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
+            conn.execute("DELETE FROM notices WHERE id=?", (notice_id,))
+            conn.commit()
+            emit_notices_update()
+            return redirect(url_for("admin_panel") + "#existing-notices")
+        else:
+            return "Notice not found", 404
+    finally:
+        conn.close()
+
+@app.route("/notices")
+def get_notices():
+    """Return all notices as JSON (for real-time updates)."""
+    conn = get_db_connection()
+    try:
+        notices = conn.execute("SELECT * FROM notices ORDER BY timestamp DESC").fetchall()
+        return jsonify([dict(n) for n in notices])
+    finally:
+        conn.close()
+
+# ----------------------------------------
+# Main
+# ----------------------------------------
+if __name__ == "__main__":
+    # Initialize a fresh database (dropping old tables for a complete reset)
+    init_db()
+    socketio.run(app, debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

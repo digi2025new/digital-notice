@@ -1,159 +1,100 @@
-/* -------------------------------------------------- */
-/* Global Styles and Resets                           */
-/* -------------------------------------------------- */
+/* Basic resets & container approach */
 html, body {
     margin: 0;
     padding: 0;
+    background: #f8f9fa;
     font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
     width: 100%;
     height: 100%;
-}
-
-/* Logo */
-.logo {
-    max-height: 60px;
-}
-
-/* -------------------------------------------------- */
-/* Index / Slideshow Page Styles                      */
-/* -------------------------------------------------- */
-#notices {
-    width: 100%;
-    max-width: 800px;  /* Full white space display up to 800px */
-    margin: 0 auto;
-}
-
-.notice {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    padding: 20px;
     text-align: center;
-    margin: 0 auto;
-}
-
-.responsive-notice {
-    width: 100%;
-    height: auto;
-    max-height: 70vh;  /* Allow media to use up to 70% of viewport height */
-    object-fit: contain;
-    border-radius: 8px;
-    background: #fff;
-}
-
-.notice h3 {
-    margin-top: 15px;
-    font-size: 18px;
-    color: #333;
-}
-
-/* -------------------------------------------------- */
-/* Admin Page Styles                                  */
-/* -------------------------------------------------- */
-.admin-main {
-    width: 90%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px 0;
-    text-align: center;
-}
-
-/* Notices Grid for Admin Panel */
-.notices-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-/* Forms and Upload Section */
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #f4f4f4;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    margin: 0 auto;
-}
-
-.form-group {
-    width: 100%;
-    margin-bottom: 15px;
-}
-
-input[type="text"],
-input[type="file"],
-select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-/* -------------------------------------------------- */
-/* Login Page Styles                                  */
-/* -------------------------------------------------- */
-.login-body {
-    background: #f8f9fa;
+  }
+  
+  /* Container for the entire page */
+  .container {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    text-align: center;
-}
-
-.login-header, .login-footer {
+    width: 100%;
+  }
+  
+  /* Header & Footer */
+  .dheader, .dfooter {
     background: #007bff;
-    color: #fff;
+    color: white;
     padding: 15px;
     text-align: center;
-}
-
-.login-container {
-    flex: 1;
+  }
+  
+  .logo {
+    max-height: 60px;
+    margin-bottom: 10px;
+  }
+  
+  /* Full-Screen Main area for slideshow */
+  .full-main {
+    flex: 1; /* Fill space between header & footer */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-}
-
-.login-form {
+  }
+  
+  .full-notices {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Single Notice container in the slideshow */
+  .notice {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
     background: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 400px;
     box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    text-align: left;
-}
-
-/* -------------------------------------------------- */
-/* Footer Common Styles                               */
-/* -------------------------------------------------- */
-footer {
-    margin-top: 20px;
-    padding: 15px;
-    background: #007bff;
-    color: white;
+    border-radius: 8px;
+    margin: 0 auto;
+    padding: 10px;
+  }
+  
+  /* The media element (image/video/audio) filling the .notice container width */
+  .responsive-notice {
     width: 100%;
-}
-
-/* -------------------------------------------------- */
-/* Responsive Adjustments                             */
-/* -------------------------------------------------- */
-@media (max-width: 768px) {
-    #notices {
-        max-width: 95%;
+    height: 100%;
+    object-fit: contain; /* keep aspect ratio */
+    border-radius: 8px;
+    background: #fff;
+  }
+  
+  /* Title below the media */
+  .notice h3 {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  /* doc-notice styling for doc/ppt/pdf */
+  .doc-notice {
+    margin: 20px;
+    font-size: 18px;
+  }
+  
+  .dfooter p {
+    margin: 0;
+  }
+  
+  /* Responsive for smaller screens */
+  @media (max-width: 768px) {
+    .full-main {
+      padding: 10px;
     }
     .responsive-notice {
-        max-height: 50vh;
+      max-height: 50vh; /* for mobile */
     }
-    .admin-main {
-        width: 95%;
-    }
-}
+  }
+  

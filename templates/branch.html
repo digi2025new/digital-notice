@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Department - Digital Notice Board</title>
+  <!-- Bootstrap CSS for modern styling -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS (if any) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header class="py-3 bg-primary text-white text-center">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo mb-2">
+      <h1 class="h3">Select Your Department</h1>
+    </header>
+    
+    <!-- Main Section: Branch Selection -->
+    <main class="flex-fill d-flex align-items-center justify-content-center">
+      <div class="text-center">
+        <a href="{{ url_for('show_department', department='extc') }}" class="btn btn-success m-2 btn-lg">EXTC</a>
+        <a href="{{ url_for('show_department', department='it') }}" class="btn btn-success m-2 btn-lg">IT</a>
+        <a href="{{ url_for('show_department', department='cs') }}" class="btn btn-success m-2 btn-lg">CS</a>
+        <a href="{{ url_for('show_department', department='mech') }}" class="btn btn-success m-2 btn-lg">MECH</a>
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-primary text-white text-center py-2 mt-auto">
+      <p>&copy; 2025 Digital Notice Board</p>
+    </footer>
+  </div>
+  
+  <!-- Bootstrap JS Bundle (with Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

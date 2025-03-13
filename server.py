@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.secret_key = "YOUR_STRONG_SECRET_KEY"  # Replace with your strong secret key
+app.secret_key = "YOUR_STRONG_SECRET_KEY"  # Change this to a strong secret key!
 
 # --- Configuration ---
 DB_NAME = "noticeboard.db"
@@ -14,12 +14,8 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "avi", "mov", "mp3", "
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# --- SocketIO Setup ---
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# ----------------------------------------
-# Database Functions and Initialization
-# ----------------------------------------
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
     conn = sqlite3.connect(db_path)
@@ -27,16 +23,18 @@ def get_db_connection():
     return conn
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# ----------------------------------------
+# Database Initialization
+# ----------------------------------------
 def init_db():
-    """Drop old tables and create fresh ones."""
     conn = get_db_connection()
     cur = conn.cursor()
-    # Drop old tables to reset database (remove these lines if you want to preserve data)
+    # Drop old tables to start fresh (remove DROP statements if you want to preserve data)
     cur.execute("DROP TABLE IF EXISTS users")
     cur.execute("DROP TABLE IF EXISTS notices")
-    # Create users table for admin login
+    # Create users table (for admin login)
     cur.execute("""
         CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +42,7 @@ def init_db():
             password TEXT NOT NULL
         )
     """)
-    # Create notices table for uploaded notices
+    # Create notices table (for uploaded notices)
     cur.execute("""
         CREATE TABLE notices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +59,7 @@ def init_db():
     conn.close()
 
 # ----------------------------------------
-# Socket.IO Event Handlers and Update Function
+# Socket.IO Handlers & Real-Time Update
 # ----------------------------------------
 @socketio.on("connect")
 def on_connect():
@@ -73,7 +71,6 @@ def on_disconnect():
     print("Client disconnected")
 
 def emit_notices_update():
-    """Fetch and emit the latest notices to all connected clients."""
     conn = get_db_connection()
     try:
         notices = conn.execute("SELECT * FROM notices ORDER BY timestamp DESC").fetchall()
@@ -100,17 +97,18 @@ def login_required(f):
 
 @app.route("/")
 def index():
-    """Public slideshow page (all notices)."""
+    """Public slideshow page showing all notices."""
     return render_template("index.html")
 
 @app.route("/branch")
 def branch_page():
-    """Branch selection page where users choose a department."""
+    """Branch selection page."""
     return render_template("branch.html")
 
 @app.route("/department/<dept>")
 def show_department(dept):
-    """Department-specific page showing notices only for the given department."""
+    """Department-specific slideshow page.
+       Only shows notices for the specified department."""
     conn = get_db_connection()
     try:
         notices = conn.execute(
@@ -142,14 +140,14 @@ def login():
 
 @app.route("/logout")
 def logout():
-    """Log out admin and redirect to login."""
+    """Admin logout."""
     session.pop("user_id", None)
     return redirect(url_for("login"))
 
 @app.route("/admin")
 @login_required
 def admin_panel():
-    """Admin panel for managing notices."""
+    """Admin panel to manage notices."""
     conn = get_db_connection()
     try:
         notices = conn.execute("SELECT * FROM notices ORDER BY timestamp DESC").fetchall()
@@ -160,7 +158,7 @@ def admin_panel():
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload_notice():
-    """Handle file upload for new notice."""
+    """Uploads a notice and creates a new record in the database."""
     if "file" not in request.files or "department" not in request.form:
         return "Missing file or department", 400
     file = request.files["file"]
@@ -172,28 +170,27 @@ def upload_notice():
         filename = secure_filename(file.filename)
         absolute_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(absolute_path)
-        # Store relative path for proper HTML rendering
+        # Store a relative path for proper HTML rendering
         relative_path = f"static/uploads/{filename}".replace("\\", "/")
         file_type = filename.rsplit(".", 1)[1].lower()
         print("DEBUG: Storing in DB ->", relative_path)
         conn = get_db_connection()
         try:
-            conn.execute("""
-                INSERT INTO notices (title, file_path, file_type, department)
-                VALUES (?, ?, ?, ?)
-            """, (title, relative_path, file_type, department))
+            conn.execute(
+                "INSERT INTO notices (title, file_path, file_type, department) VALUES (?, ?, ?, ?)",
+                (title, relative_path, file_type, department)
+            )
             conn.commit()
         finally:
             conn.close()
         emit_notices_update()
-        # Redirect to admin panel anchored at existing notices
         return redirect(url_for("admin_panel") + "#existing-notices")
     return "Invalid file type", 400
 
 @app.route("/delete/<int:notice_id>", methods=["POST"])
 @login_required
 def delete_notice(notice_id):
-    """Delete a notice and remove the file from the server."""
+    """Deletes a notice and removes its file from disk."""
     conn = get_db_connection()
     try:
         notice = conn.execute("SELECT file_path FROM notices WHERE id=?", (notice_id,)).fetchone()
@@ -212,7 +209,7 @@ def delete_notice(notice_id):
 
 @app.route("/notices")
 def get_notices():
-    """Return all notices as JSON (for real-time updates)."""
+    """Returns all notices as JSON (for slideshow and real-time updates)."""
     conn = get_db_connection()
     try:
         notices = conn.execute("SELECT * FROM notices ORDER BY timestamp DESC").fetchall()
@@ -224,6 +221,5 @@ def get_notices():
 # Main
 # ----------------------------------------
 if __name__ == "__main__":
-    # Initialize a fresh database (dropping old tables for a complete reset)
-    init_db()
+    init_db()  # Drop and create fresh DB tables
     socketio.run(app, debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

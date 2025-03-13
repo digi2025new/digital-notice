@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Notice Board</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <!-- Socket.IO for real-time updates -->
@@ -10,101 +10,103 @@
 </head>
 <body>
   <div class="container">
-    <header>
+    <!-- Header -->
+    <header class="dheader">
       <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
       <h1>Digital Notice Board</h1>
     </header>
-    <main>
-      <div id="notices"></div>
+
+    <!-- Main Section: Full White Space for Notices -->
+    <main class="full-main">
+      <div id="notices" class="full-notices">
+        <!-- Dynamic notice content will be injected here -->
+      </div>
     </main>
-    <footer>
+
+    <!-- Footer -->
+    <footer class="dfooter">
       <p>&copy; 2025 Digital Notice Board</p>
     </footer>
   </div>
 
   <script>
+    // Connect to Socket.IO server
     const socket = io();
-    let currentNoticeIndex = 0;
     let noticesData = [];
+    let currentIndex = 0;
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
     });
 
     socket.on('update_notices', (msg) => {
-      console.log('New notices received:', msg);
+      console.log('Notices updated:', msg);
       noticesData = msg.notices;
       if (noticesData.length > 0) {
-        currentNoticeIndex = 0;
-        displayNotice(noticesData[currentNoticeIndex]);
+        currentIndex = 0;
+        displayNotice(noticesData[currentIndex]);
       }
     });
 
+    // Display one notice at a time in full white space
     function displayNotice(notice) {
-      const noticesDiv = document.getElementById('notices');
-      noticesDiv.innerHTML = ""; // Clear any previous notice
-
+      const container = document.getElementById('notices');
+      container.innerHTML = "";  // Clear previous content
+      
       let mediaHTML = "";
-
-      if (['png', 'jpg', 'jpeg', 'gif'].includes(notice.file_type)) {
+      const ext = notice.file_type.toLowerCase();
+      if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
         mediaHTML = `<img src="${notice.file_path}" alt="${notice.title}" class="responsive-notice">`;
-      } else if (['mp4', 'avi', 'mov'].includes(notice.file_type)) {
-        // Autoplay video
-        mediaHTML = `
-          <video 
-            src="${notice.file_path}"
-            class="responsive-notice"
-            autoplay
-            muted
-            playsinline
-          ></video>`;
-      } else if (['mp3','wav'].includes(notice.file_type)) {
+      } else if (['mp4', 'avi', 'mov'].includes(ext)) {
+        // Autoplay video without controls
+        mediaHTML = `<video src="${notice.file_path}" autoplay muted playsinline class="responsive-notice"></video>`;
+      } else if (['mp3', 'wav'].includes(ext)) {
         mediaHTML = `<audio src="${notice.file_path}" controls class="responsive-notice"></audio>`;
       } else {
         mediaHTML = `<p>${notice.content || 'Text Notice'}</p>`;
       }
-
+      
+      // Create a container for the notice and insert media and title
       const noticeElement = document.createElement("div");
       noticeElement.classList.add("notice");
       noticeElement.innerHTML = `
         ${mediaHTML}
         <h3>${notice.title}</h3>
       `;
-      noticesDiv.appendChild(noticeElement);
+      container.appendChild(noticeElement);
 
-      // If it's a video, wait until it ends before advancing
-      if (['mp4', 'avi', 'mov'].includes(notice.file_type)) {
+      // If video, wait until it ends before moving to the next notice
+      if (['mp4', 'avi', 'mov'].includes(ext)) {
         const videoElem = noticeElement.querySelector('video');
         if (videoElem) {
-          videoElem.onended = function() {
-            nextNotice();
-          };
+          videoElem.onended = () => { nextNotice(); }
         }
       } else {
-        // For images or other file types, show for 5 seconds
+        // For images or other media, advance after 5 seconds
         setTimeout(nextNotice, 5000);
       }
     }
 
+    // Advance to the next notice
     function nextNotice() {
       if (noticesData.length === 0) return;
-      currentNoticeIndex = (currentNoticeIndex + 1) % noticesData.length;
-      displayNotice(noticesData[currentNoticeIndex]);
+      currentIndex = (currentIndex + 1) % noticesData.length;
+      displayNotice(noticesData[currentIndex]);
     }
 
-    // Fetch notices from server on initial load
+    // Load notices from server initially
     function loadNotices() {
       fetch('/notices')
-        .then(res => res.json())
+        .then(response => response.json())
         .then(data => {
           noticesData = data;
           if (noticesData.length > 0) {
-            displayNotice(noticesData[currentNoticeIndex]);
+            displayNotice(noticesData[currentIndex]);
           } else {
             document.getElementById('notices').innerHTML = '<p>No notices to display.</p>';
           }
         })
-        .catch(err => console.error('Error:', err));
+        .catch(error => console.error('Error loading notices:', error));
     }
 
     loadNotices();
